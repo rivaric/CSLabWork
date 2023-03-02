@@ -1,3 +1,5 @@
+import math
+
 import telebot
 from telebot import types
 from datetime import date
@@ -22,7 +24,7 @@ start_training = date(2023, 1, 30)
 current_date = date.today()
 weekday = current_date.weekday()
 delta = current_date - start_training
-week = 'ch' if round(delta.days / 7) % 2 == 0 else 'nch'
+week = 'ch' if math.ceil(delta.days / 7) % 2 == 0 else 'nch'
 num_week = round(delta.days / 7)
 
 # Словарь для перевода числа в день недели
@@ -73,6 +75,20 @@ def message_day_schedule(day, message):
     bot.send_message(message.chat.id, form_day(day, day_sql_query(day)))
 
 
+def message_week_schedule(toggle, message):
+    global week
+    if toggle == 'cur':
+        res_str = f'Неделя: №{num_week}, {"чётная" if week == "ch" else "нечётная"}\n'
+    elif toggle == 'next':
+        week = 'nch' if week == 'ch' else 'ch'
+        res_str = f'Неделя: №{num_week + 1}, {"нечётная" if week == "ch" else "чётная"}\n'
+
+    for i in range(6):
+        res_str += form_day(weekday_dict[i], day_sql_query(weekday_dict[i], week))
+
+    bot.send_message(message.chat.id, res_str)
+
+
 @bot.message_handler(commands=['start'])
 def start(message):
     keyboard = types.ReplyKeyboardMarkup()
@@ -87,51 +103,112 @@ def start(message):
 
 @bot.message_handler(commands=['help'])
 def start_message(message):
-    bot.send_message(message.chat.id, 'Привет! Я ')
+    bot.send_message(message.chat.id, 'Привет! Я создан для того, чтобы показывать расписание твоих занятий.'
+                                      'Под стракой ввода находятся кнопки с текстом, пользуйся ими для эффективного'
+                                      'и быстрого использования бота, однако есть другой вариант - команды:\n'
+                                      '\n'
+                                      '/start - запуск приложения\n'
+                                      '/help - список команд\n'
+                                      '/mondey - расписание на понедельник\n'
+                                      '/tuesday - расписание на вторник\n'
+                                      '/wednesday - расписание на среду\n'
+                                      '/thursday - расписание на четверг\n'
+                                      '/friday - расписание на пятницу\n'
+                                      '/satuday - расписание на субботу\n'  
+                                      '/nextweek - расписание на следующую неделю\n'  
+                                      '/thisweek - расписание на текущую неделю\n'
+                                      '/today - расписание на сегодня\n'
+                                      '/tomorrow - расписание на завтра\n'
+                                      '/week - какая сейчас неделя\n'
+                                      '/mtuci - ссылка на сайт МТУСИ\n')
 
 
 @bot.message_handler(commands=['week'])
-def return_num_week(message):
+def message_num_week(message):
     bot.send_message(message.chat.id, f'Неделя: №{num_week}, {"чётная" if week == "ch" else "нечётная"}')
 
 
 @bot.message_handler(commands=['mtuci'])
-def return_mtuci_link(message):
+def message_mtuci_link(message):
     bot.send_message(message.chat.id, 'Официальный сайт МТУСИ - https://mtuci.ru/')
 
 
+@bot.message_handler(commands=['today'])
+def today_schedule(message):
+    message_day_schedule(weekday_dict[weekday], message)
+
+
+@bot.message_handler(commands=['tomorrow'])
+def tomorrow_schedule(message):
+    message_day_schedule(weekday_dict[weekday + 1], message)
+
+
+@bot.message_handler(commands=['currentweek'])
+def current_week(message):
+    message_week_schedule('cur', message)
+
+
+@bot.message_handler(commands=['nextweek'])
+def next_week(message):
+    message_week_schedule('next', message)
+
+
+@bot.message_handler(commands=['monday'])
+def monday_schedule(message):
+    message_day_schedule('Понедельник', message)
+
+
+@bot.message_handler(commands=['tuesday'])
+def tuesday_schedule(message):
+    message_day_schedule('Вторник', message)
+
+
+@bot.message_handler(commands=['wednesday'])
+def wednesday_schedule(message):
+    message_day_schedule('Среда', message)
+
+
+@bot.message_handler(commands=['thursday'])
+def thursday_schedule(message):
+    message_day_schedule('Четверг', message)
+
+
+@bot.message_handler(commands=['friday'])
+def friday_schedule(message):
+    message_day_schedule('Пятница', message)
+
+
+@bot.message_handler(commands=['satuday'])
+def satuday_schedule(message):
+    message_day_schedule('Суббота', message)
+
+
 @bot.message_handler(content_types=['text'])
-def answer(message, week=week):
+def answer(message):
     if message.text.lower() == "help":
         start_message(message)
     elif message.text.lower() == "понедельник":
-        message_day_schedule('Понедельник', message)
+        monday_schedule(message)
     elif message.text.lower() == "вторник":
-        message_day_schedule('Вторник', message)
+        tuesday_schedule(message)
     elif message.text.lower() == "среда":
-        message_day_schedule('Среда', message)
+        wednesday_schedule(message)
     elif message.text.lower() == "четверг":
-        message_day_schedule('Четверг', message)
+        thursday_schedule(message)
     elif message.text.lower() == "пятница":
-        message_day_schedule('Пятница', message)
+        friday_schedule(message)
     elif message.text.lower() == "суббота":
-        message_day_schedule('Суббота', message)
+        satuday_schedule(message)
     elif message.text.lower() == "расписание на текущую неделю":
-        res_str = f'Неделя: №{num_week}, {"чётная" if week == "ch" else "нечётная"}\n'
-        for i in range(7):
-            res_str += form_day(weekday_dict[i], day_sql_query(weekday_dict[i]))
-        bot.send_message(message.chat.id, res_str)
+        current_week(message)
     elif message.text.lower() == "расписание на следущую неделю":
-        res_str = f'Неделя: №{num_week + 1}, {"нечётная" if week == "ch" else "чётная"}\n'
-        for i in range(7):
-            res_str += form_day(weekday_dict[i], day_sql_query(weekday_dict[i], 'nch' if week == 'ch' else 'ch'))
-        bot.send_message(message.chat.id, res_str)
+        next_week(message)
     elif message.text.lower() == "сегодня":
-        message_day_schedule(weekday_dict[weekday], message)
+        today_schedule(message)
     elif message.text.lower() == "завтра":
-        message_day_schedule(weekday_dict[weekday + 1], message)
+        tomorrow_schedule(message)
     else:
-        bot.send_message(message.chat.id, 'Извините, я вас не понимать')
+        bot.send_message(message.chat.id, 'Извините, я вас не понимаю')
 
 
 bot.polling(none_stop=True)
