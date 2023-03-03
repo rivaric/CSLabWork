@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QLineEdit, QHBoxLayout, QVBox
 
 class Calculator(QWidget):
     def __init__(self):
+        self.op=""
         super(Calculator, self).__init__()
         self.vbox = QVBoxLayout(self)
         self.hbox_input = QHBoxLayout()
@@ -101,24 +102,34 @@ class Calculator(QWidget):
     def _button(self, param):
         line = self.input.text()
         self.input.setText(line + param)
-
-    def _operation(self, op):
         if self.input.text().count('.') > 1:
-            self.input.setText('Ошибка!')
-        elif op == '-' and self.input.text() == "":
+            self.input.setText(self.input.text()[:-1])
+
+    def _operation(self, op=""):
+        if op == '-' and self.input.text() == "":
             self.input.setText('-')
         else:
-            self.num_1 = float(self.input.text()) if '.' in self.input.text() else int(self.input.text())
-            self.num_1 = -1*int(self.input.text()[1:]) if '-' in self.input.text() else self.num_1
+            self.num_1 = -1 * float(self.input.text()) if '-' in self.input.text() and '.' in self.input.text() else float(self.input.text())
+            if type(self.num_1) is int and self.num_2 > 0:
+                if '-' in self.input.text():
+                    self.num_1 = -1 * int(self.input.text())
+                elif '.' in self.input.text():
+                    self.num_1 = float(self.input.text())
+
             self.op = op
             self.input.setText("")
 
     def _result(self):
         if self.input.text().count('.') > 1:
-            self.input.setText('Ошибка: множественные точки, все данные стёрты')
+            self.input.setText(self.input.text())
         else:
-            self.num_2 = float(self.input.text()) if '.' in self.input.text() else int(self.input.text())
-            self.num_2 = -1 * int(self.input.text()[1:]) if '-' in self.input.text() else self.num_2
+            self.num_2 = -1 * float(self.input.text()) if '-' in self.input.text() and '.' in self.input.text() else float(self.input.text())
+            if type(self.num_2) is float and self.num_2 > 0:
+                if '-' in self.input.text():
+                    self.num_2 = -1 * int(self.input.text())
+                elif '.' in self.input.text():
+                    self.num_2 = float(self.input.text())
+
             if self.op == "+":
                 self.input.setText(str(self.num_1 + self.num_2))
             elif self.op == "-":
@@ -131,7 +142,7 @@ class Calculator(QWidget):
                 else:
                     self.input.setText((str(self.num_1 * self.num_2)))
             elif self.op == "":
-                self.input.setText('Ошибка: вы не указали операцию, все данные стёрты')
+                self.input.setText('Ошибка: вы не выбрали операцию')
 
     def _clear(self):
         self.num_1 = self.num_2 = 0
@@ -141,6 +152,7 @@ class Calculator(QWidget):
 app = QApplication(sys.argv)
 
 win = Calculator()
+win.resize(450, 300)
 win.show()
 
 sys.exit(app.exec_())
