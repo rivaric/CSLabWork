@@ -110,16 +110,21 @@ class Calculator(QWidget):
             self.input.setText('-')
         else:
             self.num_1 = float(self.input.text()) if '.' in self.input.text() else int(self.input.text())
-
             self.op = op
             self.input.setText("")
 
     def _result(self):
-        if self.input.text().count('.') > 1:
+        def match(text, alphabet=None):
+            if alphabet is None:
+                alphabet = set('абвгдеёжзийклмнопрстуфхцчшщъыьэюя')
+            return not alphabet.isdisjoint(text.lower())
+
+        if self.input.text().isalpha() or match(self.input.text()):
+            self.input.setText("")
+        elif self.input.text().count('.') > 1:
             self.input.setText(self.input.text())
         else:
             self.num_2 = float(self.input.text()) if '.' in self.input.text() else int(self.input.text())
-
             if self.op == "+":
                 self.input.setText(str(self.num_1 + self.num_2))
             elif self.op == "-":
